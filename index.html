@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+<meta name="theme-color" content="#1a3d5c">
+<title>Life Drill</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #f4f6f8; color: #1c2a36; line-height: 1.5;
+  min-height: 100vh; padding-bottom: 40px;
+}
+header {
+  background: #1a3d5c; color: #fff; padding: 14px 16px;
+  position: sticky; top: 0; z-index: 10;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+header h1 { font-size: 1.05rem; font-weight: 600; letter-spacing: .3px; }
+.stats {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  font-size: .82rem; margin-top: 6px; opacity: .92;
+}
+.stats span b { color: #ffd166; font-weight: 600; }
+main { max-width: 720px; margin: 0 auto; padding: 16px; }
+.controls {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+}
+.controls select, .controls button {
+  font-size: .9rem; padding: 9px 12px; border-radius: 8px;
+  border: 1px solid #c9d1d9; background: #fff; color: #1c2a36;
+  cursor: pointer; min-height: 40px;
+}
+.controls select { flex: 1; min-width: 140px; }
+.controls button.danger { background: #fff; color: #b3261e; border-color: #e6c4c2; }
+.controls button:active { transform: scale(.97); }
+.card {
+  background: #fff; border-radius: 12px; padding: 18px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+}
+.topic-tag {
+  display: inline-block; font-size: .72rem; font-weight: 600;
+  background: #e6eef5; color: #1a3d5c; padding: 3px 8px;
+  border-radius: 4px; margin-bottom: 10px; letter-spacing: .3px;
+  text-transform: uppercase;
+}
+.subtopic-tag {
+  display: inline-block; font-size: .72rem; color: #5a6b7a;
+  margin-left: 6px;
+}
+.stem { font-size: 1.05rem; font-weight: 500; margin-bottom: 16px; }
+.choices { display: flex; flex-direction: column; gap: 8px; }
+.choice {
+  text-align: left; padding: 14px 14px; border-radius: 8px;
+  background: #f7f9fb; border: 1.5px solid #e1e7ed;
+  font-size: .98rem; line-height: 1.4; cursor: pointer;
+  color: #1c2a36; min-height: 48px;
+  transition: background .12s, border-color .12s;
+  font-family: inherit;
+}
+.choice:active { background: #eaf0f6; }
+.choice.selected.correct {
+  background: #d6f3df; border-color: #2e8b57; color: #15532f;
+}
+.choice.selected.wrong {
+  background: #f9d6d3; border-color: #b3261e; color: #6e1a14;
+}
+.choice.reveal-correct {
+  background: #e6f7ec; border-color: #2e8b57;
+}
+.choice:disabled { cursor: default; }
+.feedback {
+  margin-top: 14px; padding: 12px 14px; border-radius: 8px;
+  background: #f0f4f8; border-left: 4px solid #1a3d5c;
+  font-size: .92rem; line-height: 1.5;
+}
+.feedback.correct { background: #e6f7ec; border-left-color: #2e8b57; }
+.feedback.wrong { background: #fdecea; border-left-color: #b3261e; }
+.feedback .verdict { font-weight: 600; margin-bottom: 6px; }
+.feedback .source { font-size: .78rem; color: #5a6b7a; margin-top: 8px; font-style: italic; }
+.next-btn {
+  display: block; width: 100%; margin-top: 16px;
+  padding: 14px; font-size: 1rem; font-weight: 600;
+  background: #1a3d5c; color: #fff; border: none; border-radius: 8px;
+  cursor: pointer; min-height: 48px;
+  font-family: inherit;
+}
+.next-btn:active { background: #14304a; }
+.empty {
+  text-align: center; padding: 40px 20px; color: #5a6b7a;
+}
+.empty h2 { font-size: 1.1rem; margin-bottom: 8px; color: #1c2a36; }
+@media (max-width: 480px) {
+  main { padding: 12px; }
+  .card { padding: 14px 12px; }
+  .stem { font-size: 1rem; }
+  .choice { padding: 12px; font-size: .95rem; }
+  header h1 { font-size: 1rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>MN Life Producer — Drill</h1>
+  <div class="stats">
+    <span>Seen: <b id="stat-seen">0</b></span>
+    <span>Correct: <b id="stat-correct">0</b></span>
+    <span>Streak: <b id="stat-streak">0</b></span>
+    <span>Missed pile: <b id="stat-missed">0</b></span>
+  </div>
+</header>
+<main>
+  <div class="controls">
+    <select id="mode-select">
+      <option value="all">All topics (random)</option>
+      <option value="missed">Missed only</option>
+      <option value="topic:MN State Laws">Topic: MN State Laws</option>
+      <option value="topic:Policy Types">Topic: Policy Types</option>
+      <option value="topic:Federal Tax & Retirement">Topic: Federal Tax & Retirement</option>
+      <option value="topic:Group Insurance">Topic: Group Insurance</option>
+      <option value="topic:Social Security">Topic: Social Security</option>
+    </select>
+    <button id="reset-btn" class="danger" type="button">Reset progress</button>
+  </div>
+  <div id="card-area"></div>
+</main>
+
+<script>
+const QUESTIONS = [
+  // === MN STATE LAWS ===
+  {id:"mn-001",topic:"MN State Laws",subtopic:"Commissioner",stem:"How is the Minnesota Commissioner of Commerce selected?",choices:["Elected by voters","Appointed by the governor","Elected by licensed producers","Appointed by the legislature"],correct:1,explanation:"The Commissioner is appointed by the governor for a term that expires when the appointing governor vacates office.",source:"MN_LifeOnly_Statelaws.pdf p.3"},
+  {id:"mn-002",topic:"MN State Laws",subtopic:"Examination of Records",stem:"At minimum, how often must the Commissioner examine every insurer's condition?",choices:["At least once every 3 years","At least once every 5 years","At least once every 7 years","At least once every 10 years"],correct:1,explanation:"The Commissioner may examine the condition of an insurer at any time, but must examine every insurer's condition at least once every 5 years.",source:"MN_LifeOnly_Statelaws.pdf p.3"},
+  {id:"mn-003",topic:"MN State Laws",subtopic:"Examination of Records",stem:"How long does an insurer have to make a written rebuttal to the Commissioner after receiving the examination report?",choices:["10 days","15 days","30 days","60 days"],correct:2,explanation:"An insurer may make a written rebuttal to the Commissioner within 30 days after receiving the examination report.",source:"MN_LifeOnly_Statelaws.pdf p.3"},
+  {id:"mn-004",topic:"MN State Laws",subtopic:"Penalties",stem:"What is the maximum fine for each day a violation of a written order pursuant to an examination continues?",choices:["$1,000 per day","$5,000 per day","$10,000 per day","$25,000 per day"],correct:2,explanation:"Any person who violates or aids and abets any violation of a written order pursuant to an examination may be fined up to $10,000 for each day the violation continues.",source:"MN_LifeOnly_Statelaws.pdf p.4"},
+  {id:"mn-005",topic:"MN State Laws",subtopic:"Cease and Desist",stem:"If no hearing is requested after a cease and desist order is served, after how many days does the order become permanent?",choices:["10 days","20 days","30 days","60 days"],correct:2,explanation:"If no hearing is requested within 30 days after the cease and desist order is served, the order becomes permanent or until vacated by the Commissioner.",source:"MN_LifeOnly_Statelaws.pdf p.4"},
+  {id:"mn-006",topic:"MN State Laws",subtopic:"Form Filings",stem:"If the Commissioner does not disapprove or object to a form filing within how many days, the form is deemed approved?",choices:["30 days","45 days","60 days","90 days"],correct:2,explanation:"If the Commissioner does not disapprove or otherwise object within 60 days after the filing of any form, the form will be deemed approved.",source:"MN_LifeOnly_Statelaws.pdf p.4"},
+  {id:"mn-007",topic:"MN State Laws",subtopic:"Prelicensing",stem:"How many hours of prelicensing education are required per line of authority in Minnesota?",choices:["12 hours","16 hours","20 hours","24 hours"],correct:2,explanation:"Individuals seeking producer licenses must complete prelicensing education consisting of 20 hours of education per line of authority.",source:"MN_LifeOnly_Statelaws.pdf p.6"},
+  {id:"mn-008",topic:"MN State Laws",subtopic:"Continuing Education",stem:"Every licensee must complete how many credit hours of continuing education during each licensing period?",choices:["12 hours","20 hours","24 hours","30 hours"],correct:2,explanation:"Every licensee must complete 24 credit hours of accredited continuing education courses during each licensing period.",source:"MN_LifeOnly_Statelaws.pdf p.7"},
+  {id:"mn-009",topic:"MN State Laws",subtopic:"Continuing Education",stem:"Of the required CE hours, at least how many must be on the subject of ethics?",choices:["1 hour","2 hours","3 hours","6 hours"],correct:2,explanation:"At least 3 hours must be on the subject of ethics.",source:"MN_LifeOnly_Statelaws.pdf p.7"},
+  {id:"mn-010",topic:"MN State Laws",subtopic:"LTC Training",stem:"Before being allowed to sell LTC policies, a producer must complete an initial training of at least how many hours?",choices:["4 hours","6 hours","8 hours","12 hours"],correct:2,explanation:"A producer must complete an initial training of at least 8 hours before being allowed to sell LTC policies.",source:"MN_LifeOnly_Statelaws.pdf p.8"},
+  {id:"mn-011",topic:"MN State Laws",subtopic:"Annuity Training",stem:"What training must an insurance producer complete before transacting annuities in Minnesota?",choices:["A 2-credit one-time course","A 4-credit one-time course","An 8-hour course every 24 months","A 24-hour annual course"],correct:1,explanation:"An insurance producer who sells annuity products must complete a one-time, 4-credit training course approved by the Commissioner prior to commencing the transaction of annuities.",source:"MN_LifeOnly_Statelaws.pdf p.8"},
+  {id:"mn-012",topic:"MN State Laws",subtopic:"Producer Requirements",stem:"What is the minimum age to become a licensed resident producer in Minnesota?",choices:["16 years","18 years","19 years","21 years"],correct:1,explanation:"A resident producer must be at least 18 years of age.",source:"MN_LifeOnly_Statelaws.pdf p.8"},
+  {id:"mn-013",topic:"MN State Laws",subtopic:"Temporary License",stem:"For how long may the Commissioner issue a temporary producer license without requiring an examination?",choices:["30 days","90 days","180 days","1 year"],correct:2,explanation:"The Commissioner may issue a temporary producer license for up to 180 days, without requiring the recipient to pass an examination.",source:"MN_LifeOnly_Statelaws.pdf p.9"},
+  {id:"mn-014",topic:"MN State Laws",subtopic:"Nonresident",stem:"A producer licensed in another state who applies for a Minnesota license is exempt from prelicensing/exam requirements if they apply within how many days of moving to Minnesota?",choices:["30 days","60 days","90 days","180 days"],correct:2,explanation:"A producer licensed in another state who applies for a license within 90 days after moving to Minnesota is exempt from prelicensing education and exam requirements for the line of authority held in the prior state.",source:"MN_LifeOnly_Statelaws.pdf p.9"},
+  {id:"mn-015",topic:"MN State Laws",subtopic:"Address Change",stem:"Within how many days must licensees inform the Commissioner of a change of name or address?",choices:["5 days","10 days","15 days","30 days"],correct:1,explanation:"Licensees must inform the Commissioner of a change of name or address within 10 days of the change.",source:"MN_LifeOnly_Statelaws.pdf p.12"},
+  {id:"mn-016",topic:"MN State Laws",subtopic:"Revocation",stem:"If a producer's license is revoked, how many years must pass before they may reapply for a new license?",choices:["1 year","2 years","3 years","5 years"],correct:1,explanation:"If a license is revoked, the licensee may not reapply for a new license for at least 2 years from the date of revocation.",source:"MN_LifeOnly_Statelaws.pdf p.9"},
+  {id:"mn-017",topic:"MN State Laws",subtopic:"Revocation",stem:"After a revoked license is reissued, what performance bond amount must the applicant obtain?",choices:["$5,000","$10,000","$20,000","$50,000"],correct:2,explanation:"If the Commissioner grants the application, the applicant must obtain a $20,000 performance bond, issued by an authorized insurer.",source:"MN_LifeOnly_Statelaws.pdf p.9"},
+  {id:"mn-018",topic:"MN State Laws",subtopic:"Penalties",stem:"What is the maximum fine the Commissioner may impose per violation of an insurance law, rule, or order?",choices:["$1,000 per violation","$5,000 per violation","$10,000 per violation","$25,000 per violation"],correct:2,explanation:"The Commissioner may fine a person up to $10,000 per violation of any law, rule, or order related to the Commissioner's duties and responsibilities.",source:"MN_LifeOnly_Statelaws.pdf p.10"},
+  {id:"mn-019",topic:"MN State Laws",subtopic:"Appointment",stem:"A producer who has the insurer's permission must be appointed by the insurer within how many days after submitting their first insurance application?",choices:["10 days","15 days","30 days","60 days"],correct:1,explanation:"A producer must have the insurer's permission and be appointed by the insurer within 15 days after submitting their first insurance application.",source:"MN_LifeOnly_Statelaws.pdf p.11"},
+  {id:"mn-020",topic:"MN State Laws",subtopic:"Termination",stem:"An insurer terminating a producer's appointment must notify the Commissioner within how many days after the termination's effective date?",choices:["10 days","15 days","30 days","60 days"],correct:2,explanation:"An insurer terminating a producer's appointment must notify the Commissioner, stating the reason, within 30 days after the termination's effective date.",source:"MN_LifeOnly_Statelaws.pdf p.11"},
+  {id:"mn-021",topic:"MN State Laws",subtopic:"Lapsed License",stem:"A lapsed individual producer license may be reinstated without retaking the written exam if done within how long from the renewal due date?",choices:["6 months","12 months","18 months","24 months"],correct:1,explanation:"An individual insurance producer who allows the license to lapse may, within 12 months from the due date of the renewal fee, reinstate the license without the necessity of passing the written examination.",source:"MN_LifeOnly_Statelaws.pdf p.11"},
+  {id:"mn-022",topic:"MN State Laws",subtopic:"Lapsed License",stem:"What penalty applies for a renewal fee paid after the due date?",choices:["A flat $50 late fee","Twice the unpaid renewal fee","Triple the unpaid renewal fee","License is permanently revoked"],correct:1,explanation:"A penalty in the amount of twice the unpaid renewal fee must be paid by the individual for any renewal fee received after the due date.",source:"MN_LifeOnly_Statelaws.pdf p.11"},
+  {id:"mn-023",topic:"MN State Laws",subtopic:"Rebating",stem:"What is the maximum value of a promotional advertising item or gift that is NOT considered a rebate?",choices:["$10","$25","$50","$100"],correct:1,explanation:"A promotional advertising item of $25 or less or a gift of $25 or less per year is not a rebate if the receipt of the item or gift is not conditioned upon purchase of an insurance policy or product.",source:"MN_LifeOnly_Statelaws.pdf p.13"},
+  {id:"mn-024",topic:"MN State Laws",subtopic:"Rebating",stem:"What is the maximum fine for any act of rebating in Minnesota?",choices:["$100","$200","$500","$1,000"],correct:1,explanation:"Any act of rebating, whether in the giving or accepting of anything prohibited, may be punished by a fine of up to $200.",source:"MN_LifeOnly_Statelaws.pdf p.13"},
+  {id:"mn-025",topic:"MN State Laws",subtopic:"Discrimination",stem:"What is the fine range for a life insurer practicing unfair discrimination?",choices:["$100-$500","$200-$500","$500-$1,000","$1,000-$5,000"],correct:2,explanation:"Each life insurer practicing unfair discrimination is guilty of a gross misdemeanor and shall be fined $500-$1,000.",source:"MN_LifeOnly_Statelaws.pdf p.13"},
+  {id:"mn-026",topic:"MN State Laws",subtopic:"Recordkeeping",stem:"For how long must agents and agencies maintain financial records of client funds?",choices:["3 years","5 years","6 years","10 years"],correct:2,explanation:"All records must be maintained for at least 6 years, and must be available for examination by the Commissioner or a designee.",source:"MN_LifeOnly_Statelaws.pdf p.17"},
+  {id:"mn-027",topic:"MN State Laws",subtopic:"Recordkeeping",stem:"For how long must insurers and producers maintain consumer information used in making recommendations?",choices:["3 years","5 years","6 years","10 years"],correct:3,explanation:"Insurers and producers must maintain records of the information collected from the consumer and other information used in making the recommendations that were the basis for insurance transactions for 10 years after the insurance transaction is completed by the insurer.",source:"MN_LifeOnly_Statelaws.pdf p.18"},
+  {id:"mn-028",topic:"MN State Laws",subtopic:"Recordkeeping",stem:"For how long must complaint files be maintained?",choices:["3 years","5 years","6 years","10 years"],correct:2,explanation:"The files must contain all customer grievance documentation for at least 6 years after the date of the complaint.",source:"MN_LifeOnly_Statelaws.pdf p.17"},
+  {id:"mn-029",topic:"MN State Laws",subtopic:"Advertising",stem:"For how long must a copy of each advertisement be kept on file at the insurer's main office?",choices:["1 year","3 years","5 years","6 years"],correct:1,explanation:"A copy of each advertisement used must be kept on file at the insurer's main office for at least 3 years.",source:"MN_LifeOnly_Statelaws.pdf p.17"},
+  {id:"mn-030",topic:"MN State Laws",subtopic:"Policy Delivery",stem:"Within how many working days of receiving premium must an agent deliver policies or certificates?",choices:["10 working days","15 working days","30 working days","60 working days"],correct:2,explanation:"An agent must deliver policies or certificates within 30 working days of receiving premium, unless the insured agrees in writing that the agent may keep such evidence of insurance.",source:"MN_LifeOnly_Statelaws.pdf p.17"},
+  {id:"mn-031",topic:"MN State Laws",subtopic:"Backdating",stem:"A life insurance policy may not be issued or take effect more than how long before the original application date?",choices:["3 months","6 months","9 months","12 months"],correct:1,explanation:"A policy may not be issued or take effect more than 6 months before the original application was made.",source:"MN_LifeOnly_Statelaws.pdf p.20"},
+  {id:"mn-032",topic:"MN State Laws",subtopic:"Grace Period",stem:"What is the grace period for life insurance policies in Minnesota for the payment of every premium except the first?",choices:["10 days","20 days","1 month","60 days"],correct:2,explanation:"The grace period for life policies in Minnesota is 1 month for the payment of every premium except the first.",source:"MN_LifeOnly_Statelaws.pdf p.20"},
+  {id:"mn-033",topic:"MN State Laws",subtopic:"Free Look",stem:"What is the free look period for a NEW life insurance policy in Minnesota?",choices:["10 days","20 days","30 days","60 days"],correct:0,explanation:"The free look period is 10 days for new policies and 30 days for replacement policies.",source:"MN_LifeOnly_Statelaws.pdf p.21"},
+  {id:"mn-034",topic:"MN State Laws",subtopic:"Free Look",stem:"What is the free look period for a REPLACEMENT life insurance policy in Minnesota?",choices:["10 days","20 days","30 days","60 days"],correct:2,explanation:"The free look period is 10 days for new policies and 30 days for replacement policies.",source:"MN_LifeOnly_Statelaws.pdf p.21"},
+  {id:"mn-035",topic:"MN State Laws",subtopic:"Free Look",stem:"If a policy is sold without compliance with the free look provision, the purchaser may cancel it within what period from purchase?",choices:["30 days","6 months","1 year","2 years"],correct:2,explanation:"If a policy is sold without compliance with the free look provision, the policy or contract may be cancelled by the purchaser at any time within 1 year after the date of purchase.",source:"MN_LifeOnly_Statelaws.pdf p.21"},
+  {id:"mn-036",topic:"MN State Laws",subtopic:"Reinstatement",stem:"What is the reinstatement period for a lapsed Minnesota life policy?",choices:["1 year","2 years","3 years","5 years"],correct:2,explanation:"The reinstatement period is 3 years.",source:"MN_LifeOnly_Statelaws.pdf p.21"},
+  {id:"mn-037",topic:"MN State Laws",subtopic:"Incontestability",stem:"After how long is a Minnesota life policy incontestable by the insurer (except for nonpayment of premium)?",choices:["6 months","1 year","2 years","5 years"],correct:2,explanation:"A life policy is incontestable by the insurer, except for nonpayment of premium, after it has been in force for 2 years.",source:"MN_LifeOnly_Statelaws.pdf p.21"},
+  {id:"mn-038",topic:"MN State Laws",subtopic:"Legal Action",stem:"Within what time period must legal action begin to be pursued under a Minnesota life policy?",choices:["1 year","2 years","3 years","5 years"],correct:3,explanation:"The time period in which to begin pursuing legal action must be within 5 years.",source:"MN_LifeOnly_Statelaws.pdf p.21"},
+  {id:"mn-039",topic:"MN State Laws",subtopic:"Death Benefit Payment",stem:"An insurer that fails to pay life insurance proceeds within how many days after proof of death must pay interest on the proceeds?",choices:["30 days","60 days","90 days","6 months"],correct:1,explanation:"Death benefits must be paid within 2 months of receiving proof of death. An insurer failing to pay proceeds within 60 days must pay interest, from the date of death to the date of payment.",source:"MN_LifeOnly_Statelaws.pdf p.21"},
+  {id:"mn-040",topic:"MN State Laws",subtopic:"Policy Loans",stem:"After how many years of paid premiums may an insured take out a policy loan?",choices:["1 year","2 years","3 years","5 years"],correct:2,explanation:"An insured may take out a policy loan after 3 full years' premiums have been paid.",source:"MN_LifeOnly_Statelaws.pdf p.21"},
+  {id:"mn-041",topic:"MN State Laws",subtopic:"Policy Loans",stem:"In Minnesota, what is the maximum annual fixed interest rate on policy loans?",choices:["5%","6%","8%","10%"],correct:2,explanation:"In Minnesota, interest rates on policy loans cannot exceed either a maximum annual fixed rate of 8% or an adjustable maximum rate established by the insurer.",source:"MN_LifeOnly_Statelaws.pdf p.21"},
+  {id:"mn-042",topic:"MN State Laws",subtopic:"Guaranty Association",stem:"What is the maximum coverage the MN Life and Health Insurance Guaranty Association provides for ALL policies issued on one life by the same insurer?",choices:["$100,000","$250,000","$300,000","$500,000"],correct:3,explanation:"If an insurer becomes impaired or insolvent, the Association provides a maximum of $500,000 for all policies issued on one life by the same insurer.",source:"MN_LifeOnly_Statelaws.pdf p.19"},
+  {id:"mn-043",topic:"MN State Laws",subtopic:"Guaranty Association",stem:"Under the MN Guaranty Association, what is the maximum coverage for net cash surrender and withdrawal values for life insurance?",choices:["$100,000","$130,000","$250,000","$500,000"],correct:1,explanation:"$130,000 in net cash surrender and withdrawal values for life insurance.",source:"MN_LifeOnly_Statelaws.pdf p.19"},
+  {id:"mn-044",topic:"MN State Laws",subtopic:"Guaranty Association",stem:"Under the MN Guaranty Association, what is the maximum coverage for present value of annuity benefits?",choices:["$100,000","$130,000","$250,000","$410,000"],correct:2,explanation:"$250,000 in the present value of annuity benefits, including net cash surrender and net cash withdrawal values.",source:"MN_LifeOnly_Statelaws.pdf p.19"},
+  {id:"mn-045",topic:"MN State Laws",subtopic:"Guaranty Association",stem:"Under the MN Guaranty Association, what is the maximum present value coverage for structured settlement annuities?",choices:["$130,000","$250,000","$300,000","$410,000"],correct:3,explanation:"$410,000 in present value of annuity benefits for structured settlement annuities.",source:"MN_LifeOnly_Statelaws.pdf p.19"},
+  {id:"mn-046",topic:"MN State Laws",subtopic:"Guaranty Association Notice",stem:"Which of the following must the MN Guaranty Association notice include?",choices:["A guarantee that the policy is fully insured","The Association's name, address, and telephone number","A list of all member insurers","An offer of additional coverage"],correct:1,explanation:"The notice must state the name, address, and telephone number of the Minnesota Life and Health Insurance Guaranty Association, warn of coverage limitations, and state the prohibition on using the Association for sales or solicitation.",source:"MN_LifeOnly_Statelaws.pdf p.19"},
+  {id:"mn-047",topic:"MN State Laws",subtopic:"Guaranty Association",stem:"What is the legal status of advertising the existence of the MN Life and Health Guaranty Association as an inducement to buy insurance?",choices:["Permitted with disclosure","A misdemeanor","A gross misdemeanor","A felony"],correct:1,explanation:"It is a misdemeanor to advertise the Association's existence as an inducement to buy insurance.",source:"MN_LifeOnly_Statelaws.pdf p.19"},
+  {id:"mn-048",topic:"MN State Laws",subtopic:"Group Conversion",stem:"What is the conversion period for an employee to convert a group life policy to an individual policy?",choices:["10 days","30 days","31 days","60 days"],correct:2,explanation:"If a certificate holder dies during the 31-day conversion period, death benefits are payable under the group policy whether or not the individual elected conversion.",source:"MN_LifeOnly_Statelaws.pdf p.22"},
+  {id:"mn-049",topic:"MN State Laws",subtopic:"Group Continuation",stem:"For group life continuation after termination, what is the maximum premium rate the insurer may charge?",choices:["100% of group premium","102% of group premium","110% of group premium","150% of group premium"],correct:1,explanation:"The insurer may set the premium rate up to 102% of the group premium.",source:"MN_LifeOnly_Statelaws.pdf p.22"},
+  {id:"mn-050",topic:"MN State Laws",subtopic:"Group Continuation",stem:"For how long is an individual eligible to continue group coverage after termination of employment?",choices:["6 months","12 months","18 months","24 months"],correct:2,explanation:"The individual is eligible to continue coverage until they obtain coverage under another group policy, or 18 months, whichever comes first.",source:"MN_LifeOnly_Statelaws.pdf p.22"},
+  {id:"mn-051",topic:"MN State Laws",subtopic:"Group Continuation",stem:"Within how many days after termination must an employer notify a covered employee of insurance continuation rights?",choices:["7 days","10 days","14 days","30 days"],correct:2,explanation:"An employer must notify a covered employee of insurance continuation rights within 14 days after termination of or layoff from employment.",source:"MN_LifeOnly_Statelaws.pdf p.23"},
+  {id:"mn-052",topic:"MN State Laws",subtopic:"Group Continuation",stem:"After termination, how many days does an employee have to elect to continue group coverage?",choices:["14 days","30 days","60 days","90 days"],correct:2,explanation:"The employee whose employment is terminated, except for gross misconduct, has 60 days to elect to continue coverage for self and dependents.",source:"MN_LifeOnly_Statelaws.pdf p.23"},
+  {id:"mn-053",topic:"MN State Laws",subtopic:"Beneficiary Change",stem:"After receiving a request to change beneficiary or ownership, within how many days must the insurer respond?",choices:["10 days","15 days","30 days","60 days"],correct:2,explanation:"Upon receiving the request, the insurer must respond within 30 days with a written acknowledgement of the change, or specific reasons why the change has not been effected.",source:"MN_LifeOnly_Statelaws.pdf p.24"},
+  {id:"mn-054",topic:"MN State Laws",subtopic:"Replacement",stem:"In a replacement transaction, the replacing insurer must provide notice that the applicant has a right to an unconditional refund of all premiums paid, exercisable within what period of policy delivery?",choices:["10 days","20 days","30 days","60 days"],correct:2,explanation:"A replacing insurer must provide notice that the applicant has a right to an unconditional refund of all premiums paid, which right may be exercised within a period of 30 days beginning from the date of delivery of the policy.",source:"MN_LifeOnly_Statelaws.pdf p.25"},
+  {id:"mn-055",topic:"MN State Laws",subtopic:"Insurable Interest",stem:"In Minnesota, what is required for a charitable organization to be the original beneficiary or owner of a person's life insurance policy?",choices:["A court order","Approval from the Commissioner","The person must sign the application or consent in writing","No special requirements"],correct:2,explanation:"In Minnesota, a charitable organization has an insurable interest in a person's life, but the person must sign the application, or consent in writing, for the organization to be the original policy's beneficiary or owner.",source:"MN_LifeOnly_Statelaws.pdf p.23"},
+  {id:"mn-056",topic:"MN State Laws",subtopic:"Suspension",stem:"What must a licensee whose license has been suspended or revoked do with their license?",choices:["Keep it for their records","Mail it back to the insurer","Immediately deliver it to the Commissioner","Destroy it within 30 days"],correct:2,explanation:"A licensee whose license has been suspended or revoked must immediately deliver their license to the Commissioner.",source:"MN_LifeOnly_Statelaws.pdf p.9"},
+  {id:"mn-057",topic:"MN State Laws",subtopic:"Required Disclosures",stem:"Before a personal solicitation by phone, must the producer's required disclosures (name, agency, that they sell insurance) be made in writing?",choices:["Yes, always in writing","No, written disclosure is not required if the initial contact is by phone","Only if the prospect requests it","Only for life insurance, not health"],correct:1,explanation:"If the initial personal contact is made by telephone, the disclosures required above need not be made in writing.",source:"MN_LifeOnly_Statelaws.pdf p.18"},
+
+  // === POLICY TYPES ===
+  {id:"pt-001",topic:"Policy Types",subtopic:"Term Insurance",stem:"Which of the following is true about term insurance?",choices:["It builds cash value over time","It is pure insurance with no cash value","It always converts to permanent insurance","It is more expensive than whole life initially"],correct:1,explanation:"Term insurance is considered pure insurance and provides a pure death benefit. Term insurance does not offer any cash value or living benefits.",source:"Universal-Life-Only.pdf p.42"},
+  {id:"pt-002",topic:"Policy Types",subtopic:"Decreasing Term",stem:"In a decreasing term policy, what happens to the death benefit over the policy term?",choices:["Premiums decrease, death benefit stays level","Death benefit decreases to $0 at end of term","Both premiums and death benefit increase","Death benefit increases each year"],correct:1,explanation:"A Decreasing Term policy provides a death benefit that decreases to $0 at the end of the policy term. The premiums paid for the decreasing term remain level for the policy term.",source:"Universal-Life-Only.pdf p.43"},
+  {id:"pt-003",topic:"Policy Types",subtopic:"Annual Renewable Term",stem:"In Annual Renewable Term (ART), what happens to the death benefit and premiums?",choices:["Both remain level","Death benefit remains level, premiums increase yearly","Death benefit increases yearly, premiums remain level","Both decrease over time"],correct:1,explanation:"Annual Renewable Term (ART) is written for 1 year and automatically renews annually for a specified period. The death benefit remains level, but the premiums increase yearly as the policy renews.",source:"Universal-Life-Only.pdf p.43"},
+  {id:"pt-004",topic:"Policy Types",subtopic:"Convertibility",stem:"A convertible term policy allows conversion to a permanent policy without what?",choices:["Without paying any premium","Without evidence of insurability","Without notifying the insurer","Without an application"],correct:1,explanation:"A policy is convertible when it includes the right to convert the existing term policy to a permanent policy without evidence of insurability during the conversion period specified in the contract.",source:"Universal-Life-Only.pdf p.44"},
+  {id:"pt-005",topic:"Policy Types",subtopic:"Whole Life",stem:"Traditional whole life insurance matures or endows when the insured reaches at least what age?",choices:["Age 65","Age 75","Age 100","Age 120"],correct:2,explanation:"A traditional Whole Life insurance policy provides coverage until the insured reaches at least age 100 (but can be issued up to age 120). The policy is structured so that it matures/endows when the insured reaches at least age 100.",source:"Universal-Life-Only.pdf p.45"},
+  {id:"pt-006",topic:"Policy Types",subtopic:"Single Premium",stem:"Compared to other whole life payment forms, a Single Premium whole life policy has which characteristic?",choices:["Highest total premium outlay","Lowest total premium outlay","No cash value","No death benefit"],correct:1,explanation:"A Single Premium whole life policy allows the entire premium to be paid in a lump sum at the time of purchase; this creates immediate cash value. This policy has the lowest total premium outlay over the life of the policy compared to straight life and limited pay.",source:"Universal-Life-Only.pdf p.47"},
+  {id:"pt-007",topic:"Policy Types",subtopic:"Straight Whole Life",stem:"Straight Life (continuous premium whole life) has which characteristic compared to other whole life types?",choices:["Lowest total premium outlay","Highest total premium outlay","No cash value accumulation","Premiums paid for only 20 years"],correct:1,explanation:"Straight Life has a level premium payable to age 100 or at the insured's death, whichever comes first. The annual premium is lower than other forms of whole life but is paid for a longer period. This policy has the highest total premium outlay.",source:"Universal-Life-Only.pdf p.45"},
+  {id:"pt-008",topic:"Policy Types",subtopic:"Universal Life",stem:"Universal Life insurance is essentially a combination of which two elements?",choices:["Whole life and variable insurance","Annual renewable term and a cash value accumulation account","Decreasing term and stocks","Endowment and annuity"],correct:1,explanation:"Universal Life (UL) is essentially a combination of annual renewable term insurance with a cash value accumulation account.",source:"Universal-Life-Only.pdf p.48"},
+  {id:"pt-009",topic:"Policy Types",subtopic:"Universal Life",stem:"In Universal Life Option A, what is the death benefit structure?",choices:["Level death benefit","Increasing death benefit (face + cash value)","Variable death benefit tied to market","Death benefit decreases over time"],correct:0,explanation:"Option A is a level death benefit option. The death benefit is maintained throughout the life of the policy, and if the insured dies, that death benefit is paid.",source:"Universal-Life-Only.pdf p.49"},
+  {id:"pt-010",topic:"Policy Types",subtopic:"Universal Life",stem:"In Universal Life Option B, what is paid at the insured's death?",choices:["Only the face amount","Only the cash value","The policy's death benefit AND accumulated cash value","Face amount minus cash value"],correct:2,explanation:"Option B is an increasing death benefit option. If the insured dies, the policy's death benefit and accumulated cash value are paid.",source:"Universal-Life-Only.pdf p.50"},
+  {id:"pt-011",topic:"Policy Types",subtopic:"Risk Corridor",stem:"In a Universal Life policy, what is the purpose of the 'risk corridor' or 'corridor of insurance'?",choices:["To limit policy loans","To maintain a minimum separation between cash value and the death benefit","To restrict premium payments","To prevent the policy from lapsing"],correct:1,explanation:"A universal life policy must include an amount at risk. If the cash value approaches the face amount, the death benefit must increase to prevent the policy from maturing. This minimum separation between cash value and the death benefit is called the risk corridor, or the corridor of insurance.",source:"Universal-Life-Only.pdf p.49"},
+  {id:"pt-012",topic:"Policy Types",subtopic:"Variable Life",stem:"In a Variable Life insurance policy, who bears the investment risk on the separate account?",choices:["The insurance company","The policyowner","The beneficiary","The state guaranty association"],correct:1,explanation:"Since there is no guaranteed return on the separate account, the policyowner bears all investment risk.",source:"Universal-Life-Only.pdf p.51"},
+  {id:"pt-013",topic:"Policy Types",subtopic:"Variable Life",stem:"What kind of premium does a Variable Life insurance policy require?",choices:["Flexible premiums chosen by the policyowner","Fixed and level premiums determined at policy issue","Single premium only","Decreasing premiums"],correct:1,explanation:"Variable life insurance requires the policyowner to pay a fixed and level premium that is determined at the policy issue.",source:"Universal-Life-Only.pdf p.50"},
+  {id:"pt-014",topic:"Policy Types",subtopic:"Variable Universal Life",stem:"How does Variable Universal Life (VUL) differ from Variable Life regarding accounts?",choices:["VUL has only a general account","VUL has only a separate account, no general account","VUL has neither account","VUL has both but cannot use the separate account"],correct:1,explanation:"Variable Universal Life has a separate account only, and not a general account. The premiums are credited to the separate account, where the mortality risk and company expenses are deducted.",source:"Universal-Life-Only.pdf p.51"},
+  {id:"pt-015",topic:"Policy Types",subtopic:"Variable Products",stem:"Variable products may only be sold by individuals who hold a state life insurance license AND what other registration?",choices:["A CFP designation","A FINRA securities registration (Series 6 or 7)","A real estate license","A bank registration"],correct:1,explanation:"All variable products are subject to FINRA regulation. These products can only be sold by individuals who hold a state life insurance license and a FINRA securities registration (Series 6 or 7, and Series 63 if required).",source:"Universal-Life-Only.pdf p.51"},
+  {id:"pt-016",topic:"Policy Types",subtopic:"Adjustable Life",stem:"In an Adjustable Life policy, what does increasing the face amount typically require?",choices:["Approval of the beneficiary","Evidence of insurability","A new policy entirely","Reduction in cash value"],correct:1,explanation:"They may lengthen or shorten the protection period, increase or decrease the face amount, raise or lower the premium amount. Increasing the face amount requires evidence of insurability.",source:"Universal-Life-Only.pdf p.48"},
+  {id:"pt-017",topic:"Policy Types",subtopic:"Joint Life",stem:"A Joint Life (First-to-Die) policy pays the death benefit when?",choices:["When the last insured dies","When the first of the insureds dies","Only at the policy's maturity","Only if both die simultaneously"],correct:1,explanation:"A Joint Life policy is whole life insurance written to cover 2 (or more) lives. When one of the insured dies, the death benefit is paid, and the policy no longer exists.",source:"Universal-Life-Only.pdf p.52"},
+  {id:"pt-018",topic:"Policy Types",subtopic:"Survivorship Life",stem:"A Joint Survivorship Life (Last-to-Die) policy is commonly used for what purpose?",choices:["Paying off a mortgage","Providing income to a surviving spouse","Paying estate taxes after the second death","Funding college education"],correct:2,explanation:"A Joint Survivorship Life policy often provides a lump sum benefit to pay estate taxes once the second spouse dies, as the death benefit is not paid until the last insured dies.",source:"Universal-Life-Only.pdf p.52"},
+  {id:"pt-019",topic:"Policy Types",subtopic:"Viatical Settlement",stem:"A viatical settlement is for an insured with what life expectancy?",choices:["5 years or less","2 years or less","6 months or less","No limit"],correct:1,explanation:"A viatical settlement contract insures the life of an individual with a life-threatening or terminal illness with a life expectancy of 2 years or less.",source:"Universal-Life-Only.pdf p.55"},
+  {id:"pt-020",topic:"Policy Types",subtopic:"Viatical Settlement",stem:"In a viatical settlement, the provider typically purchases the policy at what percentage of face amount?",choices:["10% to 25%","30% to 50%","60% to 80%","90% to 100%"],correct:2,explanation:"The provider purchases the policy at 60% to 80% of the face amount, expecting to profit as the new policyowner at the time of claim.",source:"Universal-Life-Only.pdf p.55"},
+  {id:"pt-021",topic:"Policy Types",subtopic:"Group Life",stem:"In a noncontributory group life insurance plan, what percentage of eligible employees must be included?",choices:["50%","75%","90%","100%"],correct:3,explanation:"When the employer pays the entire premiums with no contribution from the employee, the plan is noncontributory, and 100% of eligible employees must be included in the plan to prevent discrimination.",source:"Universal-Life-Only.pdf p.53"},
+  {id:"pt-022",topic:"Policy Types",subtopic:"Group Life",stem:"In a contributory group life insurance plan, what minimum employee participation is typically required by insurers?",choices:["50%","75%","90%","100%"],correct:1,explanation:"Plans that require any premium payment from employees are called contributory, and employees may opt out. However, insurance companies usually require at least 75% participation to maintain profitability and avoid adverse selection.",source:"Universal-Life-Only.pdf p.53"},
+
+  // === FEDERAL TAX & RETIREMENT ===
+  {id:"tx-001",topic:"Federal Tax & Retirement",subtopic:"Personal Premiums",stem:"How are premiums for individual personal life insurance treated for tax purposes?",choices:["Tax deductible as business expense","Personal expenses, not deductible (paid with after-tax dollars)","Deductible above 7.5% of AGI","Partially deductible"],correct:1,explanation:"Premiums for individuals are considered personal expenses and are not deductible. They are paid with after-tax dollars.",source:"Universal-Life-Only.pdf p.93"},
+  {id:"tx-002",topic:"Federal Tax & Retirement",subtopic:"Cash Value",stem:"How is the growth of cash value within a life insurance policy taxed?",choices:["Taxed annually as ordinary income","Taxed annually as capital gains","Tax-deferred as long as the cash value remains in the policy","Always tax-free"],correct:2,explanation:"The earnings in the cash value grow on a tax-deferred basis and will not be taxed as long as the cash value remains in the policy.",source:"Universal-Life-Only.pdf p.94"},
+  {id:"tx-003",topic:"Federal Tax & Retirement",subtopic:"Death Benefit",stem:"How is a lump-sum life insurance death benefit paid to a named beneficiary taxed?",choices:["Taxed as ordinary income","Taxed as capital gains","Not taxable","Taxed only if over $50,000"],correct:2,explanation:"The death benefit proceeds of individual life insurance policies are not taxable when paid as a lump sum to a named beneficiary.",source:"Universal-Life-Only.pdf p.94"},
+  {id:"tx-004",topic:"Federal Tax & Retirement",subtopic:"Policy Loans",stem:"How is a policy loan taken against the cash value of a life insurance policy treated for tax purposes (while the policy is in force)?",choices:["Always taxable as income","Not taxable as long as the policy is in force","Taxable only above the cost basis","Taxable as capital gains"],correct:1,explanation:"If a policyowner takes out a loan against the cash value of a life insurance policy, the loan amount is not taxable, even if the loan amount is higher than the amount of premiums paid. The loan is not taxed as long as the policy is in force.",source:"Universal-Life-Only.pdf p.94"},
+  {id:"tx-005",topic:"Federal Tax & Retirement",subtopic:"Policy Surrender",stem:"When a policy is surrendered, the Cost Recovery Rule taxes amounts received above the cost basis as what?",choices:["Capital gains, FIFO basis","Ordinary income, FIFO basis","Ordinary income, LIFO basis","Tax-free returns of basis"],correct:1,explanation:"The Cost Recovery Rule applies when a policyowner surrenders a policy or takes a partial withdrawal. Any amount received that exceeds the cost basis becomes taxable as ordinary income on a first in, first out (FIFO) basis.",source:"Universal-Life-Only.pdf p.94"},
+  {id:"tx-006",topic:"Federal Tax & Retirement",subtopic:"Group Life Tax",stem:"At what employer-paid group life insurance death benefit amount do premiums become taxable income to the employee?",choices:["$25,000","$50,000","$100,000","$250,000"],correct:1,explanation:"Employer-paid premiums for group life insurance do not constitute taxable income to the employee unless the death benefit paid for by the employer exceeds $50,000.",source:"Universal-Life-Only.pdf p.96"},
+  {id:"tx-007",topic:"Federal Tax & Retirement",subtopic:"MEC",stem:"A Modified Endowment Contract (MEC) results from a policy that fails which test?",choices:["The 5-year vesting test","The 7-pay test","The 1035 exchange test","The cost basis test"],correct:1,explanation:"To be defined as life insurance under the current Internal Revenue Code, a policy must meet a cash value accumulation test or guideline premium requirements, known as the 7-pay test. If a policy fails to meet these guidelines, it is classified as a Modified Endowment Contract (MEC).",source:"Universal-Life-Only.pdf p.96"},
+  {id:"tx-008",topic:"Federal Tax & Retirement",subtopic:"MEC",stem:"How are distributions from a Modified Endowment Contract (MEC) taxed?",choices:["FIFO (first in, first out)","LIFO (last in, first out)","Tax-free","As capital gains"],correct:1,explanation:"A MEC's distributed funds are subject to a last in, first out (LIFO) tax treatment instead of the first in, first out (FIFO) tax treatment.",source:"Universal-Life-Only.pdf p.96"},
+  {id:"tx-009",topic:"Federal Tax & Retirement",subtopic:"MEC Penalty",stem:"What is the penalty on gains withdrawn from a MEC prior to age 59½?",choices:["5%","10%","15%","25%"],correct:1,explanation:"All cash value transactions from a MEC are subject to taxation and penalties. Funds are subject to a 10% penalty on gains withdrawn prior to age 59½.",source:"Universal-Life-Only.pdf p.97"},
+  {id:"tx-010",topic:"Federal Tax & Retirement",subtopic:"Annuities",stem:"How are withdrawals from a nonqualified annuity (prior to annuitization) taxed?",choices:["FIFO basis as capital gains","LIFO basis as ordinary income","Tax-free as return of premium","FIFO basis as ordinary income"],correct:1,explanation:"Earnings from annuity investments are taxed on a last-in, first-out (LIFO) basis. The earnings are taxed as ordinary income when withdrawn from the contract.",source:"Universal-Life-Only.pdf p.97"},
+  {id:"tx-011",topic:"Federal Tax & Retirement",subtopic:"1035 Exchange",stem:"Which of the following exchanges is NOT permitted under IRC Section 1035?",choices:["Life insurance to life insurance","Life insurance to annuity","Annuity to annuity","Annuity to life insurance"],correct:3,explanation:"The IRS does not allow 1035 exchanges from an annuity to life insurance. Permitted exchanges are: life insurance to life insurance, life insurance to annuity, annuity to annuity, and life insurance or annuity to long-term care.",source:"Universal-Life-Only.pdf p.99"},
+  {id:"tx-012",topic:"Federal Tax & Retirement",subtopic:"Traditional IRA",stem:"At what age must a person take their first Required Minimum Distribution (RMD) from a Traditional IRA?",choices:["Age 59½","Age 65","Age 70½","Age 73"],correct:3,explanation:"A person must take their first RMD by April 1st of the year after they reach age 73. The RMD deadline for each subsequent year is December 31.",source:"Universal-Life-Only.pdf p.99"},
+  {id:"tx-013",topic:"Federal Tax & Retirement",subtopic:"RMD Penalty",stem:"What is the penalty for failing to take all or part of an annual Required Minimum Distribution (RMD)?",choices:["10%","15%","25%","50%"],correct:2,explanation:"Failure to take all or part of an annual required minimum distribution (RMD) results in a 25% penalty tax on the amount not distributed.",source:"Universal-Life-Only.pdf p.99"},
+  {id:"tx-014",topic:"Federal Tax & Retirement",subtopic:"IRA Rollover",stem:"If an IRA payment is made directly to the IRA owner, how many days do they have to deposit it into a new IRA to avoid taxes and penalties?",choices:["30 days","60 days","90 days","180 days"],correct:1,explanation:"If the payment is made directly to the IRA owner, they will have 60 days to deposit the check into a new IRA to avoid taxes and penalties.",source:"Universal-Life-Only.pdf p.100"},
+  {id:"tx-015",topic:"Federal Tax & Retirement",subtopic:"Roth IRA",stem:"Roth IRA qualified distributions are tax-free when the account has been open at least how long AND the owner is at least what age?",choices:["3 years and age 55","5 years and age 59½","7 years and age 65","10 years and age 70½"],correct:1,explanation:"When the account has been open for at least 5 years and the owner is at least age 59½, proceeds under a qualified distribution are received tax-free.",source:"Universal-Life-Only.pdf p.100"},
+  {id:"tx-016",topic:"Federal Tax & Retirement",subtopic:"IRA Investments",stem:"Which of the following is NOT a permissible investment in an IRA?",choices:["Mutual funds","Common stock","Certificates of deposit","Life insurance"],correct:3,explanation:"Permissible investments in IRAs include mutual funds, common stock, certificates of deposit, or annuities, to name a few. Life insurance is not a permissible investment in an IRA.",source:"Universal-Life-Only.pdf p.99"},
+  {id:"tx-017",topic:"Federal Tax & Retirement",subtopic:"ERISA",stem:"What is the primary federal law setting minimum standards for qualified pension plans in private industry?",choices:["FINRA","ERISA","Section 1035","SIMPLE"],correct:1,explanation:"Qualified plans must meet the requirements set by the Employee Retirement Income Security Act (ERISA), a federal law that sets minimum standards for pension plans in private industry.",source:"Universal-Life-Only.pdf p.100"},
+  {id:"tx-018",topic:"Federal Tax & Retirement",subtopic:"SIMPLE Plan",stem:"A SIMPLE plan is available to companies with how many employees?",choices:["Fewer than 50","Fewer than 100","Fewer than 250","Any size"],correct:1,explanation:"SIMPLE plans are only available to companies with fewer than 100 employees and must be the only type of company plan available to employees.",source:"Universal-Life-Only.pdf p.102"},
+  {id:"tx-019",topic:"Federal Tax & Retirement",subtopic:"SIMPLE Plan",stem:"In a SIMPLE plan, when must the employer's contribution be vested?",choices:["After 1 year","After 3 years","After 5 years","Immediately at 100%"],correct:3,explanation:"The employer's contribution must be immediately vested at 100%; the employee is entitled to all the employer's contributions immediately.",source:"Universal-Life-Only.pdf p.102"},
+
+  // === GROUP & OTHER ===
+  {id:"go-001",topic:"Social Security",subtopic:"Insured Status",stem:"How many quarter credits are required for fully insured status under Social Security?",choices:["20 credits","30 credits","40 credits","60 credits"],correct:2,explanation:"Fully insured status requires an individual to have earned a minimum of 40 quarter credits (or approximately 10 years of employment).",source:"Universal-Life-Only.pdf p.55"},
+  {id:"go-002",topic:"Social Security",subtopic:"Death Benefit",stem:"What is the one-time Social Security death benefit paid to a surviving spouse or minor children?",choices:["$100","$255","$500","$1,000"],correct:1,explanation:"After a taxpayer's death, a one-time payment of $255 may be made. This death benefit is only payable to a surviving spouse or minor children.",source:"Universal-Life-Only.pdf p.55"},
+  {id:"go-003",topic:"Group Insurance",subtopic:"Master Policy",stem:"In a group insurance plan, who receives the master policy and who receives the certificate of insurance?",choices:["Each employee gets the master policy; employer gets a certificate","Employer/sponsor gets the master policy; each employee gets a certificate","Both go to the insurer","Both are issued to the state regulator"],correct:1,explanation:"The insurer issues a master policy to the employer sponsor, and each employee participant receives a certificate of insurance as evidence of coverage.",source:"Universal-Life-Only.pdf p.53"},
+  {id:"go-004",topic:"Group Insurance",subtopic:"Grace Period",stem:"What is the typical grace period for group insurance?",choices:["10 days","31 days","45 days","60 days"],correct:1,explanation:"Group insurance is usually written as annual renewable term and has many of the same provisions as individual insurance, including a grace period of typically 31 days.",source:"Universal-Life-Only.pdf p.53"},
+  {id:"go-005",topic:"Policy Types",subtopic:"STOLI",stem:"Why have many states outlawed STOLI/IOLI policies?",choices:["They generate too much commission","They have a lack of insurable interest","They violate FINRA rules","They are not approved by the IRS"],correct:1,explanation:"The practice of STOLI and IOLI has resulted in fraudulent abuses, causing many states to outlaw these policies due to a lack of insurable interest.",source:"Universal-Life-Only.pdf p.56"},
+  {id:"go-006",topic:"Policy Types",subtopic:"Universal Life",stem:"In a Universal Life policy, what is the typical guaranteed minimum interest rate on the cash value held in the general account?",choices:["1%-2%","3%-4%","5%-6%","7%-8%"],correct:1,explanation:"The accumulated cash value is held in the insurer's general account with a guaranteed minimum interest rate, usually returning 3%-4%.",source:"Universal-Life-Only.pdf p.49"},
+  {id:"go-007",topic:"Policy Types",subtopic:"Variable Loans",stem:"In a Variable Life policy, what percentage of cash value can typically be borrowed?",choices:["50%-60%","75%-90%","Up to 100%","No loans permitted"],correct:1,explanation:"Policy loans are available from either the general account or the separate account. Typically, 75%–90% of the cash value can be borrowed.",source:"Universal-Life-Only.pdf p.51"},
+
+  // === SOCIAL SECURITY (additional) ===
+  {id:"ss-001",topic:"Social Security",subtopic:"Credits",stem:"How many credits (quarters of coverage) can a worker accumulate per year toward Social Security eligibility?",choices:["1","2","4","6"],correct:2,explanation:"The credits are based on annual income and allow a worker to accumulate up to four credits, or quarters of coverage, per year.",source:"Universal-Life-Only.pdf p.54"},
+  {id:"ss-002",topic:"Social Security",subtopic:"Currently Insured",stem:"For currently insured status under Social Security, how many quarter credits must be earned in the 13-quarter period ending with the triggering event?",choices:["At least 4","At least 6","At least 10","At least 20"],correct:1,explanation:"For currently insured status, a worker must earn at least 6 quarter credits during the full 13-quarter period ending with the quarter in which the worker dies, becomes disabled, or is entitled to retirement benefits.",source:"Universal-Life-Only.pdf p.55"},
+  {id:"ss-003",topic:"Social Security",subtopic:"Full Retirement Age",stem:"What is the maximum Social Security full retirement age (FRA) based on birth year?",choices:["Age 62","Age 65","Age 67","Age 70"],correct:2,explanation:"The full retirement age (FRA) varies based on birth year, up to age 67.",source:"Universal-Life-Only.pdf p.55"},
+  {id:"ss-004",topic:"Social Security",subtopic:"Early Retirement",stem:"What is the earliest age a covered worker may begin receiving Social Security retirement benefits (with permanently reduced benefits)?",choices:["Age 55","Age 59½","Age 60","Age 62"],correct:3,explanation:"Covered workers may receive retirement benefits as early as age 62; however, benefits will be permanently reduced.",source:"Universal-Life-Only.pdf p.55"},
+  {id:"ss-005",topic:"Social Security",subtopic:"Survivor Benefits",stem:"A surviving spouse with a dependent child receives benefits until the youngest child reaches what age (or what age for a disabled child)?",choices:["12 (or 18 disabled)","16 (or 22 disabled)","18 (or 22 disabled)","21 (or 26 disabled)"],correct:1,explanation:"A surviving spouse with a dependent child under age 16 is entitled to monthly income until the youngest child reaches age 16 (or a disabled child reaches age 22).",source:"Universal-Life-Only.pdf p.55"},
+  {id:"ss-006",topic:"Social Security",subtopic:"Blackout Period",stem:"At what age may an unmarried surviving spouse start receiving Social Security retirement benefits (after the blackout period)?",choices:["Age 55","Age 60","Age 62","Age 65"],correct:1,explanation:"An unmarried surviving spouse may start receiving retirement benefits at age 60. The blackout period occurs when the youngest child reaches age 16, and the spouse becomes ineligible for retirement benefits until age 60.",source:"Universal-Life-Only.pdf p.55"},
+  {id:"ss-007",topic:"Social Security",subtopic:"Surviving Children",stem:"Surviving children of a deceased worker are covered until what age (or what age if still in high school)?",choices:["16 (or 18 in HS)","18 (or 19 in HS)","21 (or 22 in HS)","22 (or 25 in HS)"],correct:1,explanation:"Surviving children of a deceased worker are eligible for benefits and covered to age 18 (or 19 if still enrolled in high school).",source:"Universal-Life-Only.pdf p.55"},
+  {id:"ss-008",topic:"Social Security",subtopic:"Surviving Parents",stem:"At what age may surviving parents become eligible for Social Security survivor benefits (if at least half of their support was by the deceased worker)?",choices:["Age 55","Age 60","Age 62","Age 65"],correct:2,explanation:"Beginning at age 62, surviving parents are also eligible for monthly survivor benefits if at least half of their support was by the deceased worker.",source:"Universal-Life-Only.pdf p.55"},
+  {id:"ss-009",topic:"Social Security",subtopic:"Funding",stem:"Social Security is funded by employees and employers through what tax?",choices:["FUTA","FICA","SECA","Self-Employment Tax only"],correct:1,explanation:"Funding for the Social Security System is provided by employees and employers through the Federal Insurance Contributions Act (FICA) tax. The employer withholds the employee's tax and pays it along with the employer's portion.",source:"Universal-Life-Only.pdf p.54"},
+  {id:"ss-010",topic:"Social Security",subtopic:"PIA",stem:"In Social Security, what does PIA represent?",choices:["Permanent Insurance Account","Primary Insurance Amount","Pension Income Allocation","Public Insurance Assessment"],correct:1,explanation:"Once eligible, Social Security benefits are based on a basic formula, which determines each covered worker's Primary Insurance Amount (PIA), or the benefit a person would receive if they begin receiving retirement benefits at the average retirement age.",source:"Universal-Life-Only.pdf p.55"},
+
+  // === GROUP INSURANCE (additional) ===
+  {id:"gr-001",topic:"Group Insurance",subtopic:"Eligibility",stem:"To be eligible for a group plan, the group must be what kind of group?",choices:["A debtor group","A natural group","A registered group","An insured group"],correct:1,explanation:"A group must be a natural group, formed for a purpose other than obtaining life insurance at a reduced cost, to be eligible for a group plan.",source:"Universal-Life-Only.pdf p.53"},
+  {id:"gr-002",topic:"Group Insurance",subtopic:"Underwriting",stem:"What is the underwriter's greatest concern when underwriting a group plan?",choices:["Adverse selection","Premium calculation","Commission structure","Age distribution"],correct:0,explanation:"The underwriter's greatest concern when underwriting a group plan is adverse selection.",source:"Universal-Life-Only.pdf p.54"},
+  {id:"gr-003",topic:"Group Insurance",subtopic:"Conversion",stem:"Does an employee need to provide evidence of insurability to convert group coverage to an individual permanent life policy?",choices:["Yes, always required","No, evidence of insurability is not required","Only if over age 50","Only if the policy is variable"],correct:1,explanation:"The employee does not need to provide evidence of insurability to convert their group coverage to an individual permanent life insurance policy.",source:"Universal-Life-Only.pdf p.54"},
+  {id:"gr-004",topic:"Group Insurance",subtopic:"Eligible Employees",stem:"In most group life insurance plans, which employees are typically eligible?",choices:["Only executives","Full-time employees only","Part-time and seasonal employees only","Anyone who applies"],correct:1,explanation:"Only full-time employees are typically eligible, while part-time and seasonal employees are not.",source:"Universal-Life-Only.pdf p.53"},
+  {id:"gr-005",topic:"Group Insurance",subtopic:"Full-Time Definition",stem:"What is an example of a threshold an employer might use to define 'full-time' for group insurance eligibility?",choices:["20 hours per week","25 hours per week","30 hours per week","40 hours per week"],correct:2,explanation:"The employer determines what is considered full-time, such as 30 hours per week and this information is used by underwriting.",source:"Universal-Life-Only.pdf p.53"},
+  {id:"gr-006",topic:"Group Insurance",subtopic:"Probationary Period",stem:"What is the probationary period in a group insurance plan?",choices:["A trial period after enrollment when claims are denied","A waiting period between hire and enrollment eligibility","The first month of the insurer's review","Time before the employer pays the first premium"],correct:1,explanation:"This probationary period is a waiting period between when an individual is hired and when they become eligible to enroll in the group plan.",source:"Universal-Life-Only.pdf p.54"},
+  {id:"gr-007",topic:"Group Insurance",subtopic:"Policy Type",stem:"Group insurance is usually written as what type of insurance?",choices:["Annual renewable term","Whole life","Universal life","Variable universal life"],correct:0,explanation:"Group insurance is usually written as annual renewable term and has many of the same provisions as individual insurance, including a grace period of typically 31 days.",source:"Universal-Life-Only.pdf p.53"},
+  {id:"gr-008",topic:"Group Insurance",subtopic:"Death Benefit Formula",stem:"The death benefit schedule under a group plan is typically based on which of the following?",choices:["The employee's age only","A flat benefit only","A formula such as years of service, occupational classification, salary, or a flat benefit","Random assignment by the insurer"],correct:2,explanation:"The death benefit schedule provided under the group plan is predetermined based on a formula. The formula can be based on years of service, occupational classification, salary, or a flat benefit for all eligible employees.",source:"Universal-Life-Only.pdf p.53"},
+  {id:"gr-009",topic:"Group Insurance",subtopic:"Conversion Period",stem:"If a certificate holder dies DURING the 31-day group conversion period, what happens to death benefits?",choices:["No benefits are paid","Benefits are paid only if conversion was elected","Death benefits are payable under the group policy whether or not conversion was elected","Benefits are paid at half value"],correct:2,explanation:"If a certificate holder dies during the 31-day conversion period, death benefits are payable under the group policy whether or not the individual elected conversion.",source:"MN_LifeOnly_Statelaws.pdf p.22"},
+  {id:"gr-010",topic:"Group Insurance",subtopic:"Participant Rights",stem:"What is the ONE policy change that group plan participants can make without insurer involvement?",choices:["Increase face amount","Change the beneficiary","Change premium amount","Surrender for cash"],correct:1,explanation:"Participants in the plan do not own or control the policy and cannot make any changes except for naming the beneficiary.",source:"Universal-Life-Only.pdf p.53"},
+  {id:"gr-011",topic:"Group Insurance",subtopic:"MN Continuation Election",stem:"For MN group continuation, the 60-day election period begins on the LATER of which two dates?",choices:["The date of hire, or the date of first paycheck","The date coverage would otherwise terminate, or the date the continuation notice was received","The date of termination, or 30 days after termination","The date of the layoff letter, or the date the insurer agrees"],correct:1,explanation:"The 60-day period begins whenever is the later date between: the date the coverage would otherwise terminate, or the date the continuation notice was received.",source:"MN_LifeOnly_Statelaws.pdf p.23"}
+];
+
+// === STATE MANAGEMENT ===
+const STORAGE_KEY = "mnLifeDrill_v1";
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const s = JSON.parse(raw);
+    if (s.version !== 1) return defaultState();
+    return s;
+  } catch(e) { return defaultState(); }
+}
+
+function defaultState() {
+  return {
+    version: 1,
+    per_question: {},
+    total_seen: 0,
+    total_correct: 0,
+    current_streak: 0,
+    missed_pile: []
+  };
+}
+
+function saveState(s) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+  catch(e) { console.warn("Could not save state", e); }
+}
+
+let state = loadState();
+let currentMode = "all";
+let currentQuestion = null;
+let currentAnswered = false;
+
+function updateStats() {
+  document.getElementById("stat-seen").textContent = state.total_seen;
+  document.getElementById("stat-correct").textContent = state.total_correct;
+  document.getElementById("stat-streak").textContent = state.current_streak;
+  document.getElementById("stat-missed").textContent = state.missed_pile.length;
+}
+
+function pickQuestion() {
+  let pool;
+  if (currentMode === "missed") {
+    pool = QUESTIONS.filter(q => state.missed_pile.includes(q.id));
+  } else if (currentMode.startsWith("topic:")) {
+    const topic = currentMode.slice(6);
+    pool = QUESTIONS.filter(q => q.topic === topic);
+  } else {
+    pool = QUESTIONS.slice();
+  }
+  if (pool.length === 0) return null;
+  // Avoid repeating the same question twice in a row
+  let candidates = pool;
+  if (currentQuestion && pool.length > 1) {
+    candidates = pool.filter(q => q.id !== currentQuestion.id);
+  }
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function renderEmpty(msg) {
+  document.getElementById("card-area").innerHTML = `
+    <div class="empty">
+      <h2>${msg}</h2>
+      <p>Switch modes from the dropdown above.</p>
+    </div>`;
+}
+
+function renderQuestion(q) {
+  currentQuestion = q;
+  currentAnswered = false;
+  const choicesHtml = q.choices.map((c, i) =>
+    `<button class="choice" data-idx="${i}" type="button">${escapeHtml(c)}</button>`
+  ).join("");
+  document.getElementById("card-area").innerHTML = `
+    <div class="card">
+      <span class="topic-tag">${escapeHtml(q.topic)}</span><span class="subtopic-tag">${escapeHtml(q.subtopic || "")}</span>
+      <div class="stem">${escapeHtml(q.stem)}</div>
+      <div class="choices">${choicesHtml}</div>
+      <div id="feedback-area"></div>
+    </div>`;
+  document.querySelectorAll(".choice").forEach(btn => {
+    btn.addEventListener("click", () => handleAnswer(parseInt(btn.dataset.idx)));
+  });
+}
+
+function handleAnswer(idx) {
+  if (currentAnswered) return;
+  currentAnswered = true;
+  const q = currentQuestion;
+  const correct = idx === q.correct;
+  const buttons = document.querySelectorAll(".choice");
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === idx) btn.classList.add("selected", correct ? "correct" : "wrong");
+    if (!correct && i === q.correct) btn.classList.add("reveal-correct");
+    if (correct && i === q.correct) btn.classList.add("reveal-correct");
+  });
+
+  // Update state
+  state.total_seen += 1;
+  if (correct) {
+    state.total_correct += 1;
+    state.current_streak += 1;
+    // Remove from missed pile if it was there
+    state.missed_pile = state.missed_pile.filter(id => id !== q.id);
+  } else {
+    state.current_streak = 0;
+    if (!state.missed_pile.includes(q.id)) state.missed_pile.push(q.id);
+  }
+  if (!state.per_question[q.id]) state.per_question[q.id] = {attempts:0, correct:0};
+  state.per_question[q.id].attempts += 1;
+  if (correct) state.per_question[q.id].correct += 1;
+  state.per_question[q.id].last_seen_iso = new Date().toISOString();
+  state.per_question[q.id].last_correct = correct;
+  saveState(state);
+  updateStats();
+
+  const fb = document.getElementById("feedback-area");
+  fb.innerHTML = `
+    <div class="feedback ${correct ? 'correct' : 'wrong'}">
+      <div class="verdict">${correct ? "Correct" : "Incorrect"}</div>
+      <div>${escapeHtml(q.explanation)}</div>
+      <div class="source">Source: ${escapeHtml(q.source)}</div>
+    </div>
+    <button class="next-btn" id="next-btn" type="button">Next question</button>`;
+  document.getElementById("next-btn").addEventListener("click", nextQuestion);
+  document.getElementById("next-btn").focus();
+}
+
+function nextQuestion() {
+  const q = pickQuestion();
+  if (!q) {
+    if (currentMode === "missed") {
+      renderEmpty("No questions in your missed pile. Nice work.");
+    } else {
+      renderEmpty("No questions available in this mode.");
+    }
+    return;
+  }
+  renderQuestion(q);
+  window.scrollTo(0,0);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+// === EVENT LISTENERS ===
+document.getElementById("mode-select").addEventListener("change", (e) => {
+  currentMode = e.target.value;
+  currentQuestion = null;
+  nextQuestion();
+});
+
+document.getElementById("reset-btn").addEventListener("click", () => {
+  if (confirm("Reset all progress? This clears stats and the missed pile.")) {
+    state = defaultState();
+    saveState(state);
+    updateStats();
+    currentQuestion = null;
+    nextQuestion();
+  }
+});
+
+// === BOOT ===
+updateStats();
+nextQuestion();
+</script>
+</body>
+</html>
